@@ -6,9 +6,7 @@ import models
 
 def fix_missing_ids():
     db = SessionLocal()
-    missing_ids = [1, 3, 5, 8, 9] # Ezeket keressük
-    
-    # Csak ezeket kérjük le az adatbázisból
+    missing_ids = [1, 3, 5, 8, 9]
     movies = db.query(models.Movie).filter(models.Movie.id.in_(missing_ids)).all()
     
     posters_dir = "static/posters"
@@ -23,7 +21,6 @@ def fix_missing_ids():
         print(f"Próbálkozás: {movie.title} (ID: {movie.id})")
         
         try:
-            # Megpróbáljuk letölteni
             response = requests.get(movie.posterURL, stream=True, timeout=15)
             if response.status_code == 200:
                 with open(file_path, 'wb') as f:

@@ -9,17 +9,18 @@ db = mysql.connector.connect(
 )
 cursor = db.cursor(dictionary=True)
 
-# Lekérjük az összes filmet
+#Összes film lekérése, cím alapján plakát azonosítás
 cursor.execute("SELECT id, title FROM movies")
 movies = cursor.fetchall()
 
 folder = "static/posters"
 
+
+#Mappában levő fájlokon végighalad és átnevezi
 for movie in movies:
     movie_id = movie['id']
-    title = movie['title'].lower().replace(" ", "_") # pl. "Beetlejuice" -> "beetlejuice"
-    
-    # Megkeressük, van-e olyan kép, aminek a nevében benne van a film címe
+    title = movie['title'].lower().replace(" ", "_")
+    #Film címének szereplésének ellenőrzése
     for filename in os.listdir(folder):
         if title in filename.lower() and not filename.startswith("movie_"):
             old_path = os.path.join(folder, filename)

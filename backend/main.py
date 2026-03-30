@@ -14,9 +14,8 @@ import bcrypt
 from sqlalchemy import func
 import feedparser
 
-# 1. Az alkalmazás létrehozása
+#Az alkalmazás létrehozása
 app = FastAPI()
-# A régi helyett próbáld ezt, ha a 3.14-es Python akadékoskodik:
 
 script_dir = os.path.dirname(__file__)
 static_path = os.path.join(script_dir, "static")
@@ -24,10 +23,10 @@ static_path = os.path.join(script_dir, "static")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Engedélyezünk minden forrást (a te esetedben az 5174-et is)
+    allow_origins=["*"], 
     allow_credentials=True,
-    allow_methods=["*"], # Engedélyezzük a GET, POST, stb. kéréseket
-    allow_headers=["*"], # Engedélyezzük az összes fejlécet
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.mount("/static", StaticFiles(directory=static_path), name="static")
@@ -41,12 +40,10 @@ class UserLogin(BaseModel):
     password: str
 
 def hash_password(password: str):
-    # A bcrypt byte-okat vár, ezért encode-oljuk, és a sót is hozzáadjuk
     salt = bcrypt.gensalt()
-    # Csak az első 72 karaktert engedjük (bcrypt limit)
     pwd_bytes = password[:72].encode('utf-8')
     hashed = bcrypt.hashpw(pwd_bytes, salt)
-    return hashed.decode('utf-8') # Stringként adjuk vissza a MySQL-nek
+    return hashed.decode('utf-8') 
 
 def verify_password(plain_password: str, hashed_password: str):
     return bcrypt.checkpw(
@@ -54,7 +51,7 @@ def verify_password(plain_password: str, hashed_password: str):
         hashed_password.encode('utf-8')
     )
 
-# 2. Adatbázis kapcsolat kezelő (függőség)
+#Adatbázis kapcsolat kezelő
 def get_db():
     db = SessionLocal()
     try:
@@ -64,7 +61,7 @@ def get_db():
 
 @app.post("/register")
 def register(user_in: UserRegister, db: Session = Depends(get_db)):
-    # 1. Ellenőrzés: létezik-e már a felhasználó
+    #Felhasználó létezésének ellenőrzése
     db_user = db.query(models.User).filter(
         (models.User.username == user_in.username) | 
         (models.User.email == user_in.email)
@@ -73,15 +70,13 @@ def register(user_in: UserRegister, db: Session = Depends(get_db)):
     if db_user:
         raise HTTPException(status_code=400, detail="Username or email already registered")
 
-    # 2. Jelszó hashelése (Csak EGYSZER fut le, és változóba mentjük)
-    # A .decode() segít megelőzni a ValueError-t bizonyos Python verzióknál
     hashed_pwd = hash_password(user_in.password)
     
-    # 3. Új felhasználó létrehozása
+    #Új felhasználó létrehozása
     new_user = models.User(
         username=user_in.username,
         email=user_in.email,
-        password_hash=hashed_pwd, # Itt a már elkészült hasht használjuk
+        password_hash=hashed_pwd,
         created_at=datetime.now()
     )
     
@@ -101,26 +96,22 @@ def login(user_in: UserRegister, db: Session = Depends(get_db)):
 
     if not user:
         raise HTTPException(status_code=401, detail="Hibás felhasználónév vagy jelszó")
-
-    # Itt az új, stabil függvényt használjuk:
     if not verify_password(user_in.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Hibás felhasználónév vagy jelszó")
 
     return {"status": "success", "message": "Sikeresen beléptél!", "username": user.username}
-# 3. Főoldal útvonal
+#Főoldal útvonal
 @app.get("/")
 def home():
     return RedirectResponse(url="/docs")
 
-# 4. Teszt útvonal a MySQL adatok lekéréséhez
+#Teszt lekéréshez
 @app.get("/test-connection")
 def test_db(db: Session = Depends(get_db)):
     try:
-        # Lekérünk 5 filmet a models.py-ban definiált Movie osztály alapján
         movies = db.query(models.Movie).all()
         return movies
     except Exception as e:
-        # Ha hiba történik (pl. rossz jelszó vagy táblanév), itt kiírja
         return {
             "status": "error",
             "message": "Sikertelen kapcsolódás az adatbázishoz!",
@@ -130,10 +121,7 @@ def test_db(db: Session = Depends(get_db)):
 @app.get("/genres")
 def get_genres(db: Session = Depends(get_db)):
     try:
-        # Lekérjük az összes műfajt
         genres = db.query(models.Genre).all()
-        
-        # DEBUG: Kiírjuk a terminálba, hogy lássuk, mi jön a MySQL-ből
         print(f"DEBUG: Talált műfajok száma: {len(genres)}")
         for g in genres:
             print(f"DEBUG: Műfaj: {g.name}")
@@ -146,8 +134,6 @@ def get_genres(db: Session = Depends(get_db)):
 @app.get("/latest-directors")
 def get_latest_directors(db: Session = Depends(get_db)):
     try:
-        # Lekérjük a rendezőket az adatbázisból
-        # (Feltételezem, hogy a models.py-ban Director-nak nevezted el)
         directors = db.query(models.Director).limit(10).all()
         
         if not directors:
@@ -168,16 +154,14 @@ def get_ign_news(category: str):
     else:
         url = "https://www.ign.com/rss/articles/feed?tags=movies&count=20"
 
-    #XML adatok lekérése és feldolgozása
     feed = feedparser.parse(url)
     news_items = []
 
     for entry in feed.entries:
-        # Kép kinyerése (az IGN RSS-ben ez általában a media_thumbnail-ben van)
         img_url = ""
         if 'media_thumbnail' in entry:
             img_url = entry.media_thumbnail[0]['url']
-        elif 'links' in entry: # Tartalék megoldás, ha máshol lenne
+        elif 'links' in entry:
             for link in entry.links:
                 if 'image' in link.get('type', ''):
                     img_url = link.get('href')
@@ -190,7 +174,7 @@ def get_ign_news(category: str):
         })
 
     return news_items
-#Szerver indítás
+#Indítás
 if __name__ == "__main__":
     import uvicorn
     print("Szerver indul...")

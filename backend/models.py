@@ -21,11 +21,9 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(50), unique=True, nullable=False)
     email = Column(String(100), unique=True, nullable=False)
-    # Figyelj, itt az oszlop neve password_hash, ahogy a képen látni!
     password_hash = Column(String(255), nullable=False)
     created_at = Column(DateTime, server_default=func.now())
     
-# models.py-ban kell lennie:
 class Genre(Base):
     __tablename__ = "genres"
 
@@ -33,7 +31,7 @@ class Genre(Base):
     name = Column(String(50), nullable=False)
     
 class Director(Base):
-    __tablename__ = "directors" # Vagy amire a MySQL-ben keresztelted a táblát
+    __tablename__ = "directors"
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255))
