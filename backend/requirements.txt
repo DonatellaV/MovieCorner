@@ -1,7 +1,6 @@
+fastapi
 uvicorn==0.27.1
 gunicorn==21.2.0
-fastapi
-uvicorn
 pydantic
 sqlalchemy
 pymysql
@@ -9,4 +8,6 @@ cryptography
 python-dotenv
 python-multipart
 passlib[bcrypt]
+bcrypt
 pyjwt
+feedparser
