@@ -129,7 +129,7 @@ function LoginPage({ onBack, onSwitchToRegister }) {
     e.preventDefault();
 
     try {
-      const response = await axios.post('${API_BASE}/login', {
+      const response = await axios.post(`${API_BASE}/login`, {
         username: username,
         password: password,
         email: "login@temp.hu"
