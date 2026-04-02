@@ -6,7 +6,50 @@ import './App.css'
 const API_BASE = import.meta.env.VITE_API_URL;
 const TMDB_KEY = import.meta.env.VITE_TMDB_KEY;
 
+
+function AllActorsPage({ actors, onBack, onSelectActor }) {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  return (
+    <div className="films-browser-container">
+      <header className="browser-header">
+        <div className="header-left">
+          <button onClick={onBack} className="back-btn-minimal">← BACK</button>
+          <h2 className="browser-title">POPULAR ARTISTS</h2>
+        </div>
+      </header>
+
+      <div className="letterboxd-grid">
+        {actors.map((actor) => (
+          <div 
+            key={actor.id} 
+            className="actor-poster-card" 
+            onClick={() => onSelectActor(actor.id)}
+          >
+            <img 
+              src={actor.photoURL.replace('w185', 'w500')} 
+              alt={actor.name} 
+              className="actor-poster-img"
+            />
+            
+            <div className="actor-poster-overlay">
+              <div className="actor-card-info">
+                  <p className="actor-card-name">{actor.name}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function AllDirectorsPage({ directors, onBack, onSelectDirector }) {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   return (
     <div className="all-directors-container">
       <header className="browser-header">
@@ -322,7 +365,35 @@ function App() {
   const [filterSort, setFilterSort] = useState('latest');
   const [miniSearch, setMiniSearch] = useState(''); 
 
+  const [popularActors, setPopularActors] = useState([]);
   
+    useEffect(() => {
+  const fetchActors = async () => {
+    try {
+      const res = await fetch(`https://api.themoviedb.org/3/person/popular?api_key=${TMDB_KEY}&language=en-US&page=1`);
+      const data = await res.json();
+      
+      if (data.results) {
+        const formattedActors = data.results.slice(0, 12).map(person => ({
+          id: person.id,
+          name: person.name,
+          photoURL: person.profile_path 
+            ? `https://image.tmdb.org/t/p/w185${person.profile_path}` 
+            : `https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=00ff73&color=fff`
+        }));
+        
+        setPopularActors(formattedActors);
+        console.log("Színészek sikeresen betöltve:", formattedActors);
+      } else {
+        console.error("TMDB hiba:", data.status_message);
+      }
+    } catch (err) {
+      console.error("Hálózati hiba a színészeknél:", err);
+    }
+  };
+
+  fetchActors();
+}, []); 
 
   const fetchDirectorDetails = async (directorParam) => {
   try {
@@ -529,22 +600,19 @@ function App() {
   try {
     let finalDirectors = [];
     let page = 1;
-    let seenIds = new Set(); // Ezzel nyomon követjük, kit adtunk már hozzá
+    let seenIds = new Set();
 
-    // Addig megyünk, amíg nincs meg 20 egyedi rendező, vagy el nem érjük az 50. oldalt
     while (finalDirectors.length < 20 && page <= 50) {
       const res = await axios.get(
         `https://api.themoviedb.org/3/person/popular?api_key=${TMDB_KEY}&language=en-US&page=${page}`
       );
       
-      // Kiszűrjük azokat, akik rendezők ÉS van képük, ÉS még nem láttuk őket
       const directorsInPage = res.data.results.filter(
         p => p.known_for_department === 'Directing' && 
-             p.profile_path && 
-             !seenIds.has(p.id)
+            p.profile_path && 
+            !seenIds.has(p.id)
       );
 
-      // Hozzáadjuk őket a listához és a szűrő készletünkhöz
       directorsInPage.forEach(p => {
         seenIds.add(p.id);
         finalDirectors.push(p);
@@ -823,7 +891,61 @@ function App() {
                 }}>›</button>
               </div>
             </section>
+      {/*Leghíresebb színészek*/}
+        <section className="popular-actor-row">
+            <div className="dir-section-header">
+              <h2>ACTORS</h2>
+              <button className="see-all-btn" onClick={() => setView('all-actors')}>
+                SEE ALL
+              </button>
+            </div>
+            
+            <div className="slider-wrapper">
+              <button className="nav-btn left" onClick={() => {
+                  const slider = document.getElementById('actor-slider');
+                  if (slider) {
+                      const card = slider.querySelector('.director-circle-card');
+                      const step = card ? card.offsetWidth + 40 : 200;
+                      slider.scrollBy({ left: -(step * 4), behavior: 'smooth' });
+                  }
+              }}>‹</button>
+              
+              <div className="directors-flex" id="actor-slider">
+                {popularActors && popularActors.length > 0 ? (
+                  popularActors.map((actor, index) => (
+                    <div key={actor.id || index} 
+                        className="director-circle-card" 
+                        onClick={() => fetchActorDetails(actor.id)} 
+                        style={{cursor: 'pointer'}}
+                    >
+                      <div className="white-ring">
+                        <img 
+                          src={actor.photoURL} 
+                          alt={actor.name} 
+                          onError={(e) => {
+                            e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(actor.name)}&background=333&color=00ff73`;
+                          }}
+                        />
+                      </div>
+                      <p className="dir-name">{actor.name}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p style={{color: '#888', padding: '20px'}}>Loading actors...</p>
+                )}
+              </div>
 
+              {/* Jobbra nyíl - Fixálva az actor-slider ID-ra */}
+              <button className="nav-btn right" onClick={() => {
+                  const slider = document.getElementById('actor-slider');
+                  if (slider) {
+                      const card = slider.querySelector('.director-circle-card');
+                      const step = card ? card.offsetWidth + 40 : 200; 
+                      slider.scrollBy({ left: step * 4, behavior: 'smooth' });
+                  }
+              }}>›</button>
+            </div>
+          </section>
         </>
       )} {/*LOGIN */}
       {view === 'login' && (
@@ -863,6 +985,14 @@ function App() {
 
       {/*NEWS*/}
       {view === 'news' && <NewsSection />}
+      
+      {view === 'all-actors' && (
+      <AllActorsPage 
+        actors={popularActors} 
+        onBack={() => setView('home')} 
+        onSelectActor={fetchDirectorDetails} 
+      />
+    )}
       
 
       {/*Movie data*/}

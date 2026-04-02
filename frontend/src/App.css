@@ -1384,3 +1384,87 @@ padding: 5px 0;
   color: #888;
   margin-top: 5px;
 }
+
+
+/*ACTORS -- SEE ALL*/
+.actor-poster-card {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  border-radius: 12px; /* Kicsit kerekebb, modernebb */
+  overflow: hidden;
+  cursor: pointer;
+  background-color: #1a1a1a;
+  /* Sima átmenet minden változáshoz */
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* LEGFONTOSABB: Interakció rámutatáskor */
+.actor-poster-card:hover {
+  transform: translateY(-8px) scale(1.02); /* Kicsit megemelkedik és nő */
+  box-shadow: 0 12px 24px rgba(0, 255, 115, 0.15); /* Zöldes derengés alul */
+  border: 1px solid rgba(0, 255, 115, 0.3); /* Finom zöld keret hoverkor */
+}
+
+/* Kép stílusa - egy kis zoom effekt hoverkor */
+.actor-poster-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.actor-poster-card:hover .actor-poster-img {
+  transform: scale(1.1); /* A kép finoman belenagyít */
+}
+
+/* Overlay finomítása - sötétebb alul a jobb olvashatóságért */
+.actor-poster-overlay {
+  position: absolute;
+  inset: 0;
+  /* Sötétítés alulról felfelé, hogy a fehér név kiemelkedjen */
+  background: linear-gradient(
+    to top, 
+    rgba(0, 0, 0, 0.9) 0%, 
+    rgba(0, 0, 0, 0.4) 20%, 
+    transparent 50%
+  );
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end; /* Alulra rendezi a szöveget */
+  padding: 15px;
+  opacity: 1; /* Legyen mindig látható */
+  transition: background 0.3s ease;
+}
+
+.actor-info-content {
+  transform: translateY(0);
+  transition: transform 0.3s ease;
+}
+
+/* Szöveg animálása */
+.actor-card-name {
+  color: #ffffff;
+  margin: 0;
+  font-weight: 700;
+  font-size: 1.1rem; /* Kicsit nagyobb, hogy olvasható legyen */
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); /* Plusz árnyék a betűknek */
+}
+
+.actor-poster-card:hover .actor-card-name {
+  color: #00ff73; /* Hoverkor a név is bezöldül */
+}
+
+.actor-poster-card:hover .actor-info-content {
+  transform: translateY(-5px);
+}
+
+.actor-card-tag {
+  color: #00ff73; /* A márkaszíned */
+  margin: 4px 0 0 0;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+}
